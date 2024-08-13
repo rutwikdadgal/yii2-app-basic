@@ -20,14 +20,18 @@ stages:
         sudo apt-get update
         sudo apt-get install -y php7.4 php7.4-cli php7.4-fpm php7.4-mysql php7.4-mbstring php7.4-xml php7.4-json
       displayName: 'Install PHP Dependencies'
+      
     - script: |
-    # Install Composer
+        echo "Installing Composer"
         curl -sS https://getcomposer.org/installer | php
         sudo mv composer.phar /usr/local/bin/composer
         composer --version
       displayName: 'Install Composer'
-    - script: composer install --no-interaction --prefer-dist
-      displayName: 'composer install'
+      
+    - script: |
+        echo "Running Composer install"
+        composer install --no-interaction --prefer-dist
+      displayName: 'Composer Install'
 
 - stage: Deploy
   jobs:
@@ -42,3 +46,4 @@ stages:
         sudo systemctl restart php7.4-fpm
         EOF
       displayName: 'Deploy to EC2'
+
