@@ -1,26 +1,46 @@
-# PHP
-# Test and package your PHP project.
-# Add steps that run tests, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/php
-
 trigger:
-- master
+- main
 
 pool:
-  name: default
+  vmImage: 'ubuntu-latest'
 
 variables:
-  phpVersion: 7.4
+  # Define variables for EC2 deployment
+  EC2_HOST: '43.205.173.158'
+  EC2_USER: 'ubuntu'
+  EC2_KEY: '$(EC2_SSH_PRIVATE_KEY)'
 
-steps:
-- script: |
-    sudo update-alternatives --set php /usr/bin/php$(phpVersion)
-    sudo update-alternatives --set phar /usr/bin/phar$(phpVersion)
-    sudo update-alternatives --set phpdbg /usr/bin/phpdbg$(phpVersion)
-    sudo update-alternatives --set php-cgi /usr/bin/php-cgi$(phpVersion)
-    sudo update-alternatives --set phar.phar /usr/bin/phar.phar$(phpVersion)
-    php -version
-  displayName: 'Use PHP version $(phpVersion)'
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
+    - script: |
+        echo "Installing PHP dependencies"
+        sudo apt-get update
+        sudo apt-get install -y php php-cli php-fpm php-mysql php-pdo php-mbstring php-xml php-json
+        echo "Running composer install"
+        composer install
+      displayName: 'Install PHP Dependencies'
 
-- script: composer install --no-interaction --prefer-dist
-  displayName: 'composer install'
+- stage: Deploy
+  jobs:
+  - job: Deploy
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+        addToPath: true
+    - script: |
+        echo "Deploying to EC2"
+        ssh -i $(EC2_KEY) -o StrictHostKeyChecking=no $(EC2_USER)@$(EC2_HOST) << 'EOF'
+        cd /path/to/your/application
+        git pull origin main
+        composer install --no-dev
+        sudo systemctl restart php7.4-fpm
+        EOF
+      displayName: 'Deploy to EC2'
