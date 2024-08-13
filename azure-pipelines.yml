@@ -10,7 +10,7 @@ pool:
   name: default
 
 variables:
-  phpVersion: 7.2
+  phpVersion: 7.4
 
 steps:
 - script: |
