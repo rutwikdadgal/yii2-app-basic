@@ -22,6 +22,15 @@ stages:
         echo "Running composer install"
         composer install
       displayName: 'Install PHP Dependencies'
+    - script: |
+        echo "Checking PHP version"
+        php -v
+        echo "Installing Composer"
+        sudo apt-get update
+        sudo apt-get install -y composer
+        echo "Installing PHP dependencies"
+        composer install
+      displayName: 'Install PHP Dependencies'
 
 - stage: Deploy
   jobs:
