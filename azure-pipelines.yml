@@ -18,7 +18,7 @@ stages:
     - script: |
         echo "Installing PHP dependencies"
         sudo apt-get update
-        sudo apt-get install -y php php-cli php-fpm php-mysql php-pdo php-mbstring php-xml php-json
+        sudo apt-get install -y php7.4 php7.4-cli php7.4-fpm php7.4-mysql php7.4-mbstring php7.4-xml php7.4-json
         echo "Running composer install"
         composer install
       displayName: 'Install PHP Dependencies'
@@ -27,14 +27,10 @@ stages:
   jobs:
   - job: Deploy
     steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.x'
-        addToPath: true
     - script: |
         echo "Deploying to EC2"
         ssh -i $(EC2_KEY) -o StrictHostKeyChecking=no $(EC2_USER)@$(EC2_HOST) << 'EOF'
-        cd /path/to/your/application
+        cd /var/www/html
         git pull origin main
         composer install --no-dev
         sudo systemctl restart php7.4-fpm
