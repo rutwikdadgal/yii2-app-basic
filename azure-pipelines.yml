@@ -19,18 +19,15 @@ stages:
         echo "Installing PHP dependencies"
         sudo apt-get update
         sudo apt-get install -y php7.4 php7.4-cli php7.4-fpm php7.4-mysql php7.4-mbstring php7.4-xml php7.4-json
-        echo "Running composer install"
-        composer install
       displayName: 'Install PHP Dependencies'
     - script: |
-        echo "Checking PHP version"
-        php -v
-        echo "Installing Composer"
-        sudo apt-get update
-        sudo apt-get install -y composer
-        echo "Installing PHP dependencies"
-        composer install
-      displayName: 'Install PHP Dependencies'
+    # Install Composer
+        curl -sS https://getcomposer.org/installer | php
+        sudo mv composer.phar /usr/local/bin/composer
+        composer --version
+      displayName: 'Install Composer'
+    - script: composer install --no-interaction --prefer-dist
+      displayName: 'composer install'
 
 - stage: Deploy
   jobs:
