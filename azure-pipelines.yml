@@ -5,7 +5,7 @@ pool:
   name: default
 
 variables:
-  phpVersion: '8.0'
+  phpVersion: '7.4'
   buildConfiguration: 'Release'
   artifactName: 'yii-app'
   buildOutput: '$(Pipeline.Workspace)/$(artifactName).zip'
