@@ -42,6 +42,8 @@ stages:
         commands: |
           echo "Deploying to EC2"
           cd /var/www/html || exit 1
+          sudo chown -R www-data:www-data /var/www/html
+          sudo chmod -R 755 /var/www/html
           git pull origin main || exit 1
           composer install --no-dev || exit 1
           sudo systemctl restart php7.4-fpm || exit 1
