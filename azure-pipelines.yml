@@ -46,16 +46,16 @@ stages:
 
           echo "Configuring Apache"
           sudo bash -c 'cat > /etc/apache2/sites-available/000-default.conf <<EOF
-<VirtualHost *:80>
-    DocumentRoot /var/www/html/web
-    <Directory /var/www/html/web>
-        AllowOverride All
-        Require all granted
-    </Directory>
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
-EOF'
+          <VirtualHost *:80>
+              DocumentRoot /var/www/html/web
+              <Directory /var/www/html/web>
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+              ErrorLog ${APACHE_LOG_DIR}/error.log
+              CustomLog ${APACHE_LOG_DIR}/access.log combined
+          </VirtualHost>
+          EOF'
 
           echo "Setting permissions"
           sudo chown -R www-data:www-data /var/www/html
