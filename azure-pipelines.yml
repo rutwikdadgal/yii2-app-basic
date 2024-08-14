@@ -9,42 +9,63 @@ variables:
   SERVICE_CONNECTION_NAME: 'EC2_Connection'
 
 stages:
-- stage: Build
+- stage: BuildAndDeploy
   jobs:
-  - job: Build
-    steps:
-    - script: |
-        echo "Installing PHP 7.4 and dependencies"
-        sudo apt-get update
-        sudo apt-get install -y php7.4 php7.4-cli php7.4-fpm php7.4-mysql php7.4-mbstring php7.4-xml php7.4-json php7.4-curl
-      displayName: 'Install PHP 7.4 and Extensions'
-      
-    - script: |
-        echo "Installing Composer"
-        curl -sS https://getcomposer.org/installer | php
-        sudo mv composer.phar /usr/local/bin/composer
-        composer --version
-      displayName: 'Install Composer'
-      
-    - script: |
-        echo "Running Composer install"
-        composer install --no-interaction --prefer-dist
-      displayName: 'Composer Install'
-
-- stage: Deploy
-  jobs:
-  - job: Deploy
+  - job: BuildAndDeploy
     steps:
     - task: SSH@0
       inputs:
         sshEndpoint: $(SERVICE_CONNECTION_NAME)
         runOptions: 'commands'
         commands: |
-          echo "Deploying to EC2"
-          cd /var/www/html || exit 1
+          echo "Updating package lists"
+          sudo apt-get update
+
+          echo "Installing Apache server"
+          sudo apt-get install -y apache2
+
+          echo "Installing PHP 7.4 and dependencies"
+          sudo apt-get install -y php7.4 php7.4-cli php7.4-fpm php7.4-mysql php7.4-mbstring php7.4-xml php7.4-json php7.4-curl
+
+          echo "Installing Composer"
+          curl -sS https://getcomposer.org/installer | php
+          sudo mv composer.phar /usr/local/bin/composer
+          composer --version
+
+          echo "Cloning or updating the repository"
+          if [ ! -d /var/www/html/.git ]; then
+            sudo git clone https://github.com/yiisoft/yii2-app-basic.git /var/www/html
+          else
+            cd /var/www/html
+            sudo git pull origin main
+          fi
+
+          echo "Running Composer install"
+          cd /var/www/html
+          sudo composer install --no-interaction --prefer-dist
+
+          echo "Configuring Apache"
+          sudo bash -c 'cat > /etc/apache2/sites-available/000-default.conf <<EOF
+<VirtualHost *:80>
+    DocumentRoot /var/www/html/web
+    <Directory /var/www/html/web>
+        AllowOverride All
+        Require all granted
+    </Directory>
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOF'
+
+          echo "Setting permissions"
           sudo chown -R www-data:www-data /var/www/html
           sudo chmod -R 755 /var/www/html
-          git pull origin main || exit 1
-          composer install --no-dev || exit 1
-          sudo systemctl restart php7.4-fpm || exit 1
-      displayName: 'Deploy to EC2'
+
+          echo "Enabling Apache modules and restarting service"
+          sudo a2enmod rewrite
+          sudo systemctl restart apache2
+
+          echo "Restarting PHP-FPM"
+          sudo systemctl restart php7.4-fpm
+
+      displayName: 'Build and Deploy on EC2'
