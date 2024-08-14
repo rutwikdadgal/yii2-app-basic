@@ -7,6 +7,7 @@ pool:
 variables:
   # Define a variable to reference the service connection
   SERVICE_CONNECTION_NAME: 'EC2_Connection'
+  GIT_TOKEN: 'GIT_TOKEN'
 
 stages:
 - stage: BuildAndDeploy
@@ -35,7 +36,7 @@ stages:
 
           echo "Cloning or updating the repository"
           if [ ! -d /var/www/html/.git ]; then
-            sudo git clone https://github.com/rutwikdadgal/yii2-app-basic.git /var/www/html
+            sudo git clone sudo git clone https://rutwikdadgal:$(GIT_TOKEN)@github.com/rutwikdadgal/yii2-app-basic.git /var/www/html
           else
             cd /var/www/html
             sudo git pull origin main
