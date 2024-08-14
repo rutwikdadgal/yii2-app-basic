@@ -35,7 +35,7 @@ stages:
 
           echo "Cloning or updating the repository"
           if [ ! -d /var/www/html/.git ]; then
-            sudo git clone https://github.com/yiisoft/yii2-app-basic.git /var/www/html
+            sudo git clone https://github.com/rutwikdadgal/yii2-app-basic.git /var/www/html
           else
             cd /var/www/html
             sudo git pull origin main
