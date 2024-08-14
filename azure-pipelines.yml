@@ -1,79 +1,33 @@
 trigger:
-- main
+- main # Trigger builds on changes to the main branch
 
 pool:
-  name: default
+  vmImage: 'ubuntu-latest'
 
 variables:
-  # Define a variable to reference the service connection
-  SERVICE_CONNECTION_NAME: 'EC2_Connection'
-  GIT_TOKEN: 'GIT_TOKEN'
+  phpVersion: '8.0'
+  buildConfiguration: 'Release'
+  artifactName: 'yii-app'
+  buildOutput: '$(Pipeline.Workspace)/$(artifactName).zip'
 
-stages:
-- stage: BuildAndDeploy
-  jobs:
-  - job: BuildAndDeploy
-    steps:
-    - task: SSH@0
-      inputs:
-        sshEndpoint: $(SERVICE_CONNECTION_NAME)
-        runOptions: 'commands'
-        commands: |
-          echo "Updating package lists"
-          sudo apt-get update
+steps:
+- script: |
+    sudo apt-get update
+    sudo apt-get install -y php$(phpVersion) php-cli php-mbstring php-xml unzip
+    php -v
+  displayName: 'Install PHP and Dependencies'
 
-          echo "Installing Apache server"
-          sudo apt-get install -y apache2
+- script: |
+    composer install --no-dev --optimize-autoloader
+  displayName: 'Install PHP dependencies'
 
-          echo "Installing PHP 7.4 and dependencies"
-          sudo apt-get install -y php7.4 php7.4-cli php7.4-fpm php7.4-mysql php7.4-mbstring php7.4-xml php7.4-json php7.4-curl php7.4-zip unzip
+- script: |
+    zip -r $(buildOutput) . -x "*.git*" -x "*.git/***"
+  displayName: 'Package application'
 
-          echo "Installing Composer"
-          curl -sS https://getcomposer.org/installer | php
-          sudo mv composer.phar /usr/local/bin/composer
-          sudo chmod +x /usr/local/bin/composer
-          composer --version
-
-          echo "Cloning or updating the repository"
-          if [ ! -d /var/www/html/.git ]; then
-            sudo git clone sudo git clone https://rutwikdadgal:$(GIT_TOKEN)@github.com/rutwikdadgal/yii2-app-basic.git /var/www/html || { echo "Git clone failed"; exit 1; }
-          else
-            cd /var/www/html
-            sudo git pull origin main || { echo "Git pull failed"; exit 1; }
-          fi
-
-          echo "Running Composer install"
-          cd /var/www/html
-          php /usr/local/bin/composer install --no-interaction --prefer-dist
-
-          echo "Configuring Apache"
-          sudo bash -c 'cat > /etc/apache2/sites-available/000-default.conf <<EOF
-          <VirtualHost *:80>
-              DocumentRoot /var/www/html/web
-              <Directory /var/www/html/web>
-                  AllowOverride All
-                  Require all granted
-              </Directory>
-              ErrorLog ${APACHE_LOG_DIR}/error.log
-              CustomLog ${APACHE_LOG_DIR}/access.log combined
-          </VirtualHost>
-          EOF'
-
-          echo "Enabling Apache modules and PHP-FPM"
-          sudo a2enmod proxy_fcgi setenvif
-          sudo a2enconf php7.4-fpm
-
-          echo "Restarting Apache"
-          sudo systemctl restart apache2
-
-          echo "Restarting PHP-FPM"
-          sudo systemctl restart php7.4-fpm
-
-          echo "Setting permissions"
-          sudo chown -R www-data:www-data /var/www/html
-          sudo chmod -R 755 /var/www/html
-
-          echo "Verifying PHP-FPM is used by Apache"
-          curl -s http://localhost/info.php | grep 'FPM/FastCGI'
-      displayName: 'Build and Deploy on EC2'
+- task: PublishBuildArtifacts@1
+  inputs:
+    artifactName: $(artifactName)
+    pathToPublish: $(buildOutput)
+  displayName: 'Publish Build Artifacts'
 
