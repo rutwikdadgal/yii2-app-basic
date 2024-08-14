@@ -57,15 +57,21 @@ stages:
           </VirtualHost>
           EOF'
 
-          echo "Setting permissions"
-          sudo chown -R www-data:www-data /var/www/html
-          sudo chmod -R 755 /var/www/html
+          echo "Enabling Apache modules and PHP-FPM"
+          sudo a2enmod proxy_fcgi setenvif
+          sudo a2enconf php7.4-fpm
 
-          echo "Enabling Apache modules and restarting service"
-          sudo a2enmod rewrite
+          echo "Restarting Apache"
           sudo systemctl restart apache2
 
           echo "Restarting PHP-FPM"
           sudo systemctl restart php7.4-fpm
+
+          echo "Setting permissions"
+          sudo chown -R www-data:www-data /var/www/html
+          sudo chmod -R 755 /var/www/html
+
+          echo "Verifying PHP-FPM is used by Apache"
+          curl -s http://localhost/info.php | grep 'FPM/FastCGI'
 
       displayName: 'Build and Deploy on EC2'
