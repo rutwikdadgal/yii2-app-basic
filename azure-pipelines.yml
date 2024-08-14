@@ -2,7 +2,7 @@ trigger:
 - main # Trigger builds on changes to the main branch
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: default
 
 variables:
   phpVersion: '8.0'
