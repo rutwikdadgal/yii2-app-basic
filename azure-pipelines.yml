@@ -25,11 +25,12 @@ stages:
           sudo apt-get install -y apache2
 
           echo "Installing PHP 7.4 and dependencies"
-          sudo apt-get install -y php7.4 php7.4-cli php7.4-fpm php7.4-mysql php7.4-mbstring php7.4-xml php7.4-json php7.4-curl
+          sudo apt-get install -y php7.4 php7.4-cli php7.4-fpm php7.4-mysql php7.4-mbstring php7.4-xml php7.4-json php7.4-curl php7.4-zip unzip
 
           echo "Installing Composer"
           curl -sS https://getcomposer.org/installer | php
           sudo mv composer.phar /usr/local/bin/composer
+          sudo chmod +x /usr/local/bin/composer
           composer --version
 
           echo "Cloning or updating the repository"
@@ -42,7 +43,7 @@ stages:
 
           echo "Running Composer install"
           cd /var/www/html
-          sudo composer install --no-interaction --prefer-dist
+          php /usr/local/bin/composer install --no-interaction --prefer-dist
 
           echo "Configuring Apache"
           sudo bash -c 'cat > /etc/apache2/sites-available/000-default.conf <<EOF
@@ -73,5 +74,5 @@ stages:
 
           echo "Verifying PHP-FPM is used by Apache"
           curl -s http://localhost/info.php | grep 'FPM/FastCGI'
-
       displayName: 'Build and Deploy on EC2'
+
